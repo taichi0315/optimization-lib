@@ -9,8 +9,8 @@ import optimus.optimization.enums.SolverLib
 import optimus.optimization.model.{MPFloatVar, MPBinaryVar}
 
 case class Model(
-  empSeq:  Seq[String],
-  termSeq: Seq[Int]
+  empSeq:  Seq[Employee],
+  termSeq: Seq[Term]
 ) {
   implicit val model = MPModel(SolverLib.oJSolver)
 
@@ -21,42 +21,42 @@ case class Model(
   }
 
   // Variables
-  val attendanceVarMap: Map[(String, Int), MPBinaryVar] =
+  val attendanceVarMap: Map[(Employee.Id, Term.Id), MPBinaryVar] =
     (
       for {
         emp  <- empSeq
         term <- termSeq
-      } yield ((emp, term) -> MPBinaryVar(s"attendanceVar[${emp},${term}]"))
+      } yield ((emp.id, term.id) -> MPBinaryVar(s"attendanceVar[${emp.id},${term.id}]"))
     ).toMap
 
-  val attendanceTermNumVarMap: Map[String, MPFloatVar] =
+  val attendanceTermNumVarMap: Map[Employee.Id, MPFloatVar] =
     empSeq.map(emp =>
-      (emp -> MPFloatVar.positive(s"attendanceTermNumVar[${emp}]"))
+      (emp.id -> MPFloatVar.positive(s"attendanceTermNumVar[${emp.id}]"))
     ).toMap
 
   // Constraints
   def addAttendanceNeedsConstraint(): Unit =
     termSeq.foreach(term => add(
       Constraint(
-        sum(empSeq.flatMap(emp => attendanceVarMap.get((emp, term)))),
+        sum(empSeq.flatMap(emp => attendanceVarMap.get((emp.id, term.id)))),
         GE,
-        Const(3)
+        Const(term.attendanceNeeds)
       )
     ))
 
   def addSmoothingAttendanceConstraint(): Unit =
     empSeq.foreach(emp => add(
       Constraint(
-        attendanceTermNumVarMap.get(emp).get,
+        attendanceTermNumVarMap.get(emp.id).get,
         EQ,
-        sum(termSeq.flatMap(term => attendanceVarMap.get((emp, term)))) - Const(3)
+        sum(termSeq.flatMap(term => attendanceVarMap.get((emp.id, term.id)))) - Const(3)
       )
     ))
 
   // Objective
   minimize(
     sum(
-      empSeq.flatMap(emp => attendanceTermNumVarMap.get(emp).map(_ * Const(3)))
+      empSeq.flatMap(emp => attendanceTermNumVarMap.get(emp.id).map(_ * Const(3)))
     )
   )
 }

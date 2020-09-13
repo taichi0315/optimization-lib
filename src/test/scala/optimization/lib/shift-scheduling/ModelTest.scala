@@ -4,8 +4,18 @@ import org.scalatest.funsuite.AnyFunSuite
 
 class ModelTest extends AnyFunSuite {
   test("test1") {
-    val empSeq  = Seq("emp1", "emp2", "emp3")
-    val termSeq = Seq(1, 2, 3, 4, 5)
+    val empSeq  = Seq(
+      Employee(1),
+      Employee(2),
+      Employee(3)
+    )
+    val termSeq = Seq(
+      Term(1, 3),
+      Term(2, 2),
+      Term(3, 3),
+      Term(4, 2),
+      Term(5, 2)
+    )
 
     val ssModel = Model(empSeq, termSeq)
     ssModel.solve
