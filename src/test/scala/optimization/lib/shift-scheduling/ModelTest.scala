@@ -13,5 +13,11 @@ class ModelTest extends AnyFunSuite {
     ssModel.attendanceVarMap.foreach {
       case (key, variable) => println(s"${key}: ${variable.value}")
     }
+
+    ssModel.attendanceTermNumVarMap.foreach {
+      case (key, variable) => println(s"${key}: ${variable.value}")
+    }
+
+    println(ssModel.model.objectiveValue)
   }
 }
