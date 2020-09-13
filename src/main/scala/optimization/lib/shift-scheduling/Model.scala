@@ -17,7 +17,6 @@ case class Model(
 
   def solve(): Unit = {
     addAttendanceNeedsConstraint
-    addSmoothingAttendanceConstraint
     addLeaveConstraint
 
     start()
@@ -32,11 +31,6 @@ case class Model(
       } yield ((emp.id, term.id) -> MPBinaryVar(s"attendanceVar[${emp.id},${term.id}]"))
     ).toMap
 
-  val attendanceTermNumVarMap: Map[Employee.Id, MPFloatVar] =
-    empSeq.map(emp =>
-      (emp.id -> MPFloatVar.positive(s"attendanceTermNumVar[${emp.id}]"))
-    ).toMap
-
   // Constraints
   def addAttendanceNeedsConstraint(): Unit =
     termSeq.foreach(term => add(
@@ -46,17 +40,6 @@ case class Model(
         Const(term.attendanceNeeds)
       )
     ))
-
-  def addSmoothingAttendanceConstraint(): Unit =
-    for {
-      emp      <- empSeq
-      variable <- attendanceTermNumVarMap.get(emp.id)
-    } yield
-      add(Constraint(
-        variable,
-        EQ,
-        sum(termSeq.flatMap(term => attendanceVarMap.get(emp.id, term.id))) - Const(3)
-      ))
 
   def addLeaveConstraint(): Unit =
     for {
@@ -70,9 +53,5 @@ case class Model(
       ))
 
   // Objective
-  minimize(
-    sum(
-      empSeq.flatMap(emp => attendanceTermNumVarMap.get(emp.id).map(_ * Const(3)))
-    )
-  )
+
 }
