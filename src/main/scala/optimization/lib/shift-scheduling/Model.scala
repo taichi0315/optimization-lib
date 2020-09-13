@@ -9,14 +9,17 @@ import optimus.optimization.enums.SolverLib
 import optimus.optimization.model.{MPFloatVar, MPBinaryVar}
 
 case class Model(
-  empSeq:  Seq[Employee],
-  termSeq: Seq[Term]
+  empSeq:   Seq[Employee],
+  termSeq:  Seq[Term],
+  leaveSeq: Seq[Leave]
 ) {
   implicit val model = MPModel(SolverLib.oJSolver)
 
   def solve(): Unit = {
     addAttendanceNeedsConstraint
     addSmoothingAttendanceConstraint
+    addLeaveConstraint
+
     start()
   }
 
@@ -38,20 +41,33 @@ case class Model(
   def addAttendanceNeedsConstraint(): Unit =
     termSeq.foreach(term => add(
       Constraint(
-        sum(empSeq.flatMap(emp => attendanceVarMap.get((emp.id, term.id)))),
+        sum(empSeq.flatMap(emp => attendanceVarMap.get(emp.id, term.id))),
         GE,
         Const(term.attendanceNeeds)
       )
     ))
 
   def addSmoothingAttendanceConstraint(): Unit =
-    empSeq.foreach(emp => add(
-      Constraint(
-        attendanceTermNumVarMap.get(emp.id).get,
+    for {
+      emp      <- empSeq
+      variable <- attendanceTermNumVarMap.get(emp.id)
+    } yield
+      add(Constraint(
+        variable,
         EQ,
-        sum(termSeq.flatMap(term => attendanceVarMap.get((emp.id, term.id)))) - Const(3)
-      )
-    ))
+        sum(termSeq.flatMap(term => attendanceVarMap.get(emp.id, term.id))) - Const(3)
+      ))
+
+  def addLeaveConstraint(): Unit =
+    for {
+      leave    <- leaveSeq
+      variable <- attendanceVarMap.get(leave.eid, leave.tid)
+    } yield
+      add(Constraint(
+        variable,
+        EQ,
+        Const(0)
+      ))
 
   // Objective
   minimize(
