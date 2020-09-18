@@ -1,7 +1,6 @@
 package optimization.lib.shift.scheduling
 
-import optimus.algebra.Const
-import optimus.algebra.Constraint
+import optimus.algebra.{Const, Constraint}
 import optimus.algebra.ConstraintRelation._
 import optimus.algebra.AlgebraOps._
 import optimus.optimization._
